@@ -1,5 +1,7 @@
 import filesystem
-ruberfuse = filesystem.main('/tmp/ruberfuse');
+import blockdevice
+blockdev = blockdevice.blockdevice('/tmp/ruberfuse');
+ruberfuse = filesystem.main(blockdev);
 #this line is to create a new index table
 #ruberfuse.create_table_index('mykey2');
 ruberfuse.load_table_index('mykey2');

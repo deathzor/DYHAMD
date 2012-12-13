@@ -14,11 +14,11 @@ import struct
 
 #FIXME i only work on a blockdevice 
 class main:
-	def __init__(self,path):
+	def __init__(self,device):
 		#FIXME static size
 		self.disksize = (10737418240 / 1024) / 1024;
 		#i should be given to init
-		self.blockdevice = open(path,'rwb+')
+		self.blockdevice = device;
 	def load_table_index(self,key):
 		#FIXME no overlap check currently 
 		hash = SHA512.new(key);

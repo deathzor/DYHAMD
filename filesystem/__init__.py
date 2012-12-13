@@ -63,6 +63,10 @@ class main:
 		self.blockdevice.seek(self.indexlocation,0);
 		self._free_table_slot();
 		location = int(str(self.blockdevice.tell()),10);
+		#check freeness of the name
+	        for name in self._findfile(self.indexlocation):
+			if (name[0] == directoryname):
+				return -1;
 		#THIS WRITES 1F1F for directories
 		self.blockdevice.write('%c' % int(str(31)));
 		self.blockdevice.write('%c' % int(str(31)));
@@ -102,7 +106,7 @@ class main:
 			location = self.indexlocation;
 		self.blockdevice.seek(location);
 		output = str(ord(self.blockdevice.read(1)))+str(ord(self.blockdevice.read(1)));
-		if (output == str(1515)):
+		if (output == str(1515) or output == str(3131)):
 			self.blockdevice.seek(location + 2);
 			temp = "";
 			x = 0;
@@ -113,7 +117,7 @@ class main:
 			self.blockdevice.seek(location + 90);
 			self.blockdevice.seek(location + 100);
 			output = str(ord(self.blockdevice.read(1)))+str(ord(self.blockdevice.read(1)));
-			if (output == str(1515)):
+			if (output == str(1515) or output == str(3131)):
 				templist =  self._findfile(location + 100);
 			else:
 				templist = []

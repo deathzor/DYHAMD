@@ -7,3 +7,5 @@ class blockdevice:
 		return self.target.read(byte)
 	def seek(self,byte,typ = 0):
 		self.target.seek(byte,typ);
+	def tell(self):
+		return self.target.tell();

@@ -10,5 +10,6 @@ ruberfuse = filesystem.main(blockdev);
 ruberfuse.load_table_index('mykey2');
 if (ruberfuse.create_file_index('myname2','this is my file') != 0):
 	print 'error creating file';
+ruberfuse.create_directory_index('mydir')
 print ruberfuse._findfile();
 

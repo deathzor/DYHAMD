@@ -14,7 +14,7 @@ import struct
 
 #FIXME i only work on a blockdevice 
 class main:
-	def __init__(self):
+	def __init__(self,path):
 		#FIXME static size
 		self.disksize = (10737418240 / 1024) / 1024;
 		#i should be given to init

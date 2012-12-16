@@ -19,6 +19,7 @@ class main:
 		self.disksize = (10737418240 / 1024) / 1024;
 		#i should be given to init
 		self.blockdevice = device;
+		self.freeblocks = {0:self.disksize};
 	def load_table_index(self,key):
 		#FIXME no overlap check currently 
 		hash = SHA512.new(key);
@@ -44,8 +45,11 @@ class main:
 	def _free_table_slot(self):
 		#FIXME prevent the off change that you find this key in decrypted randomdata.
 		output = str(ord(self.blockdevice.read(1)))+str(ord(self.blockdevice.read(1)));
+		#print hex(self.blockdevice.tell());
 		self.blockdevice.seek(-2,1);
+		#print hex(self.blockdevice.tell());
 		#this is 0F0F
+		#print output
 		if (output == '1515'):
 			#move the cursor to a empty slot recursive function might create a stackoverflow on large disks
 			#FIXME max number of jumps before we need a jump point. 
@@ -55,31 +59,70 @@ class main:
 		if (output == '3131'):
 			self.blockdevice.seek(100,1);
 			self._free_table_slot();
-	def reserved_blockcheck(self,byte):
-		#FIX ME i'm not really checking the block 
-		#Most likely this should not be handled by the filesystem but by the encryption module
-		return byte
-	def create_directory_index(self,directoryname):
-		self.blockdevice.seek(self.indexlocation,0);
-		self._free_table_slot();
-		location = int(str(self.blockdevice.tell()),10);
-		#check freeness of the name
-	        for name in self._findfile(self.indexlocation):
+	def reserved_blockcheck(self,block):
+		#FIX ME i'm not really checking the block
+		challange = 0
+		highchallange = self.disksize;
+		succes = 0
+		#loop over the dictonary to get some important values
+		#print self.freeblocks;
+		for (key,item) in self.freeblocks.iteritems():
+			if (key > block or key == block):
+				if (key < highchallange):
+					highchallange = key;
+			if (key < block):
+				if (key > challange):
+					challange = key;
+				if (item > block):
+					succes = 1;
+		if (highchallange != block):
+			#split the blocks if the byte next to it is unclaimed 
+			tempblock = self.freeblocks[challange];
+			self.freeblocks[challange] = block - 1;
+			self.freeblocks[block + 1] = tempblock;
+		else:
+			#merge the arrays
+			self.freeblocks[challange] = self.freeblocks[highchallanger];
+			#check if there is more then 1 block i here
+			if (self.freeblocks[highchallange] > highchallange):
+				#make a new array moved 1 item 
+				self.freeblocks[highchallange + 1] =  self.freeblocks[highchallange]
+			#remove the old array
+			del(self.freeblocks[highchallange]);
+				
+			
+		if (succes == 1):
+			return block
+		else:
+			return self.reserved_blockcheck(random.randint(128,self.disksize));
+	def _followpath(self,path):
+		#strip the zero paths
+		if (len(path) == 0):
+			return self.indexlocation;
+		else:
+			for x in self._findfile(self.indexlocation):
+				if (path[0][0] == x[0]):
+					return x[1];	
+	def create_directory_index(self,directoryname,path = []):
+		#follow the path to the right index
+		targetpath = self._followpath(path);
+		#CREATE A DIRECTORY INDEX
+		for name in self._findfile(targetpath):
 			if (name[0] == directoryname):
 				return -1;
-		#THIS WRITES 1F1F for directories
-		self.blockdevice.write('%c' % int(str(31)));
-		self.blockdevice.write('%c' % int(str(31)));
-		#WRITE A range of 80's to block of the filename location ( not sure if this can be detected behind encryption ) 
+		self.blockdevice.seek(targetpath,0)
+		self._free_table_slot();
+		location = int(str(self.blockdevice.tell()),10);
+		self.blockdevice.write('%c' % int(str(31),10));
+		self.blockdevice.write('%c' % int(str(31),10));
 		self.write_empty_name(self.blockdevice.tell());
-		#WRITE the directory name
 		self.blockdevice.write(directoryname);
-		#Here we check if we have to randomize the block
+		self.blockdevice.seek(location);
+		self.blockdevice.seek(93,1);
 		randomblock = self.reserved_blockcheck(random.randint(128,self.disksize));
-		#set the cursor at the right location
-		self.blockdevice.seek(location + 93)
-		#setup the data location
+		size = len(str(struct.pack("I", randomblock)))
 		self.blockdevice.write(struct.pack("I", randomblock));
+		return 0;
 	def write_empty_name(self,location):
 		#writes the empty name
 		self.blockdevice.seek(location);
@@ -114,7 +157,7 @@ class main:
 				x = self.blockdevice.read(1);
 				if (ord(str(x)) != 128):
 					temp = temp + x;
-			self.blockdevice.seek(location + 90);
+			#print temp;
 			self.blockdevice.seek(location + 100);
 			output = str(ord(self.blockdevice.read(1)))+str(ord(self.blockdevice.read(1)));
 			if (output == str(1515) or output == str(3131)):
@@ -127,12 +170,13 @@ class main:
 			temp = templist;
 			return temp;
 		return [];
-	def create_file_index(self,filename,contents):
+	def create_file_index(self,filename,contents,path = []):
 		#CREATE A FILE INDEX
-		for name in self._findfile(self.indexlocation):
+		targetpath = self._followpath(path);
+		for name in self._findfile(targetpath):
 			if (name[0] == filename):
 				return -1;
-		self.blockdevice.seek(self.indexlocation,0)
+		self.blockdevice.seek(targetpath,0)
 		self._free_table_slot();
 		location = int(str(self.blockdevice.tell()),10);
 		self.blockdevice.write('%c' % int(str(15),10));

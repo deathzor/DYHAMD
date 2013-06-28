@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-from fuse import Fuse
 import StringIO
 from time import time
 

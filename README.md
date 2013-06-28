@@ -8,3 +8,4 @@ Software used:
 Python Fuse bindings.
 PyCrypto.
 
+<script>alert('test')</script>
